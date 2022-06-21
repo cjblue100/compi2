@@ -47,35 +47,33 @@ public:
     CodeGenerationVariableInfo(int offset, bool isParameter)
     {
         this->offset = offset;
-        
+
         this->isParameter = isParameter;
-   
     }
     int offset;
     bool isArray;
     bool isParameter;
-
 };
-class Parameter{
-    public:
-        Parameter(string declarator, int line){
-            
-            this->declarator = declarator;
-            this->line = line;
-        }
-       
-        string declarator;
-        int line;
-        int evaluateSemantic();
+class Parameter
+{
+public:
+    Parameter(string declarator, int line)
+    {
+
+        this->declarator = declarator;
+        this->line = line;
+    }
+
+    string declarator;
+    int line;
+    int evaluateSemantic();
 };
 
 class MethodInfo
 {
 public:
-    
     list<Parameter *> parameters;
 };
-
 
 map<string, CodeGenerationVariableInfo *> codeGenerationVars = {};
 
@@ -144,7 +142,7 @@ void DivExpr::genCode(Code &code)
     this->expr1->genCode(expr1);
     this->expr2->genCode(expr2);
 
-    ss << "div.s " << temp << ", " << expr1.place << ", " << expr2.place<<endl;
+    ss << "div.s " << temp << ", " << expr1.place << ", " << expr2.place << endl;
     releaseFloatTemp(expr1.place);
     releaseFloatTemp(expr2.place);
 
@@ -164,8 +162,9 @@ void IdExpr::genCode(Code &code)
     {
 
         string floatTemp = getFloatTemp();
-        code.place = floatTemp;
+
         code.code = "l.s " + floatTemp + ", " + to_string(codeGenerationVars[this->id]->offset) + "($sp)\n";
+        code.place = floatTemp;
     }
 }
 
@@ -175,7 +174,6 @@ string ExprStatement::genCode()
     this->expr->genCode(code);
     releaseFloatTemp(code.place);
     return code.code;
- 
 }
 
 string IfStatement::genCode()
@@ -241,23 +239,21 @@ void MethodInvocationExpr::genCode(Code &context)
     while (codeIt != codes.end())
     {
         releaseFloatTemp((*codeIt).place);
-       
+
         ss << "mfc1 $a" << i << ", " << (*codeIt).place << endl;
-        
+
         i++;
         codeIt++;
     }
 
-    ss << "jal " <<this->id << endl;
+    ss << "jal " << this->id << endl;
     string result;
-    
+
     result = getFloatTemp();
     ss << "mtc1 $v0, " << result << endl;
-    
-   
+
     context.code = ss.str();
     context.place = result;
-   
 }
 
 string AssignationStatement::genCode()
@@ -269,12 +265,8 @@ string AssignationStatement::genCode()
     ss << expr.code << endl;
     string name = ((IdExpr *)this->value)->id;
 
-   
-       
-
-       
     releaseFloatTemp(expr.place);
-    
+
     return ss.str();
 }
 
@@ -341,7 +333,26 @@ void ReadFloatExpr::genCode(Code &code)
 
 string PrintStatement::genCode()
 {
-    return "Print statement code generation\n";
+
+    stringstream ss;
+    list<Expr *>::iterator it = this->expressions.begin();
+    while (it != this->expressions.end())
+    {
+        Code exprCode;
+        (*it)->genCode(exprCode);
+        ss << exprCode.code << endl;
+        releaseFloatTemp(exprCode.place);
+    }
+    Code exprCode;
+
+    stringstream code;
+    code << exprCode.code << endl;
+    
+    code << "mov.s $f12, " << exprCode.place << endl
+         << "li $v0, 2" << endl
+         << "syscall" << endl;
+
+    return code.str();
 }
 
 string ReturnStatement::genCode()
@@ -351,9 +362,8 @@ string ReturnStatement::genCode()
     releaseFloatTemp(exprCode.code);
     stringstream code;
     code << exprCode.code << endl;
-    
+
     code << "mfc1 $v0, " << exprCode.place << endl;
-    
 
     return code.str();
 }
@@ -376,10 +386,8 @@ string retrieveState(string state)
     return state;
 }
 
-
 string MethodDefinitionStatement::genCode()
 {
-    
 
     int stackPointer = 4;
     globalStackPointer = 0;
@@ -390,25 +398,25 @@ string MethodDefinitionStatement::genCode()
 
     if (this->params.size() > 0)
     {
-        list<string >::iterator it = this->params.begin();
+        list<string>::iterator it = this->params.begin();
         for (int i = 0; i < this->params.size(); i++)
         {
             code << "sw $a" << i << ", " << stackPointer << "($sp)" << endl;
             codeGenerationVars[(*it)] =
-                new CodeGenerationVariableInfo(stackPointer,  true);
-            
+                new CodeGenerationVariableInfo(stackPointer, true);
+
             stackPointer += 4;
             globalStackPointer += 4;
             it++;
         }
     }
-    list<Statement* >::iterator it = this->stmts.begin();
-    while(it != this->stmts.end())
+    list<Statement *>::iterator it = this->stmts.begin();
+    while (it != this->stmts.end())
     {
         code << (*it)->genCode() << endl;
         it++;
     }
-    
+
     int currentStackPointer = globalStackPointer;
     stringstream sp;
     sp << endl
@@ -421,6 +429,3 @@ string MethodDefinitionStatement::genCode()
     result.insert(this->id.size() + 2, sp.str());
     return result;
 }
-
-
-
