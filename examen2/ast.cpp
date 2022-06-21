@@ -342,6 +342,7 @@ string PrintStatement::genCode()
         (*it)->genCode(exprCode);
         ss << exprCode.code << endl;
         releaseFloatTemp(exprCode.place);
+        it++;
     }
     Code exprCode;
 
