@@ -1,0 +1,8 @@
+let test (a, b) = 
+printf("a+b=", a+b)
+printf("a/b=", a/b)
+printf("a>b=", a>b)
+printf("a<b=", a<b)
+let main() = a = 3
+b = 6 
+test(a,b)
